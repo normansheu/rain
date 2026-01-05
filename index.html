@@ -37,7 +37,7 @@
       opacity: 0.9;
     }
     to {
-      transform: translate(var(--drift), 110vh);
+      transform: translate(var(--drift), var(--fall-distance));
       opacity: 0;
     }
   }
@@ -54,7 +54,7 @@
     width: 80%;
     max-width: 400px;
     font-family: monospace;
-    font-size: 16px; /* prevents mobile zoom */
+    font-size: 16px;
   }
 </style>
 </head>
@@ -74,7 +74,12 @@
 const rain = document.getElementById("rain");
 const input = document.getElementById("input");
 
+// FIXED viewport height (prevents mobile keyboard issues)
+const VIEWPORT_HEIGHT = window.innerHeight;
+const FALL_DISTANCE = VIEWPORT_HEIGHT * 1.1;
+
 const chars = ["|", ".", ":", "/", "\\", "~"];
+const dissolveChars = [".", "/", "\\", "|"];
 const poem = [
   "water moves",
   "color waits",
@@ -88,20 +93,40 @@ function createDrop(text, xBase, speedMultiplier = 1) {
   drop.className = "drop";
   drop.textContent = text;
 
-  const xOffset = (Math.random() * 24 - 12); // keep letters close
-  const x = xBase + xOffset;
+  const xOffset = Math.random() * 24 - 12;
+  drop.style.left = (xBase + xOffset) + "px";
 
-  const baseDuration = 5 + Math.random() * 6;
-  const duration = baseDuration / speedMultiplier;
-
+  const duration = (5 + Math.random() * 6) / speedMultiplier;
   const drift = (Math.random() * 60 - 30).toFixed(1) + "px";
 
-  drop.style.left = x + "px";
   drop.style.setProperty("--drift", drift);
+  drop.style.setProperty("--fall-distance", FALL_DISTANCE + "px");
   drop.style.animationName = "fall";
   drop.style.animationDuration = duration + "s";
 
   rain.appendChild(drop);
+
+  // dissolve into rain glyph near bottom 10%
+  const dissolvePoint = VIEWPORT_HEIGHT * 0.9;
+  const startTime = performance.now();
+
+  function checkPosition(time) {
+    const elapsed = (time - startTime) / 1000;
+    const progress = elapsed / duration;
+    const y = progress * FALL_DISTANCE;
+
+    if (y > dissolvePoint && !drop.dataset.dissolved) {
+      drop.textContent =
+        dissolveChars[Math.floor(Math.random() * dissolveChars.length)];
+      drop.dataset.dissolved = "true";
+    }
+
+    if (elapsed < duration) {
+      requestAnimationFrame(checkPosition);
+    }
+  }
+
+  requestAnimationFrame(checkPosition);
   setTimeout(() => drop.remove(), duration * 1000);
 }
 
@@ -128,7 +153,7 @@ setInterval(() => {
   createDrop(line, Math.random() * window.innerWidth, 0.8);
 }, 5000);
 
-// --- LETTER-BY-LETTER INPUT (CLUSTERED) ---
+// --- CLUSTERED LETTER INPUT ---
 
 input.addEventListener("keydown", (e) => {
   if (e.key === "Enter" && input.value.trim() !== "") {
@@ -139,9 +164,8 @@ input.addEventListener("keydown", (e) => {
       if (letter === " ") return;
 
       setTimeout(() => {
-        const speed = 0.8 + Math.random() * 0.8;
-        createDrop(letter, baseX, speed);
-      }, i * 90 + Math.random() * 100);
+        createDrop(letter, baseX, 0.9 + Math.random() * 0.5);
+      }, i * 90 + Math.random() * 80);
     });
 
     input.value = "";
