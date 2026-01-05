@@ -2,12 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>Rain</title>
-<meta
-  name="viewport"
-  content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
-/>
-
+<title>Rain Altar</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 <style>
   body {
     margin: 0;
@@ -32,12 +28,8 @@
   }
 
   @keyframes fall {
-    from {
-      transform: translate(0, -10px);
-    }
-    to {
-      transform: translate(var(--drift), var(--fall-distance));
-    }
+    from { transform: translate(0, -10px); }
+    to { transform: translate(var(--drift), var(--fall-distance)); }
   }
 
   #input {
@@ -60,34 +52,24 @@
 <body>
 
 <div id="rain"></div>
-
-<input
-  id="input"
-  type="text"
-  placeholder="Offer yourself to the rain"
-  maxlength="100"
-/>
+<input id="input" type="text" placeholder="Offer a word to the rain" maxlength="60" />
 
 <script>
 const rain = document.getElementById("rain");
-const input = document.getElementById("input");
 
 const VIEWPORT_HEIGHT = window.innerHeight;
 const FALL_DISTANCE = VIEWPORT_HEIGHT * 1.1;
 
-const rainGlyphs = [".", "/", "\\", "|", "||", ":", "+", “*”, “!”];
+const rainGlyphs = [".", "/", "\\", "|", ":", "+", “*”, “!”];
 const poem = [
-  "花の色は",
-  "うつりにけりな",
-  "いたづらに",
-  "わが身世にふる",
-  "ながめせしまに",
-  "好雨知時節，當春乃發生",
-  "隨風潛入夜，潤物細無聲",
-  "野徑雲俱黑，江船火獨明",
-  "曉看紅溼處，花重錦官城",
+  "water moves",
+  "color waits",
+  "rain becomes cloth",
+  "held briefly",
+  "falling without return"
 ];
 
+// Create a single drop (letter or glyph)
 function createDrop(text, xBase, speedMultiplier = 1) {
   const drop = document.createElement("div");
   drop.className = "drop";
@@ -105,7 +87,7 @@ function createDrop(text, xBase, speedMultiplier = 1) {
 
   rain.appendChild(drop);
 
-  const fadeStart = VIEWPORT_HEIGHT * 0.64;
+  const fadeStart = VIEWPORT_HEIGHT * 0.65;
   const fadeEnd = VIEWPORT_HEIGHT * 0.98;
   const startTime = performance.now();
 
@@ -119,36 +101,39 @@ function createDrop(text, xBase, speedMultiplier = 1) {
       drop.style.opacity = (0.85 * (1 - t)).toFixed(2);
 
       if (Math.random() < t * 0.4) {
-        drop.textContent =
-          rainGlyphs[Math.floor(Math.random() * rainGlyphs.length)];
+        drop.textContent = rainGlyphs[Math.floor(Math.random() * rainGlyphs.length)];
       }
     }
 
-    if (elapsed < duration) {
-      requestAnimationFrame(update);
-    }
+    if (elapsed < duration) requestAnimationFrame(update);
   }
 
   requestAnimationFrame(update);
   setTimeout(() => drop.remove(), duration * 1000);
 }
 
-// layered rain
+// Random ASCII rain
+function randomChar() {
+  return rainGlyphs[Math.floor(Math.random() * rainGlyphs.length)];
+}
+
+// --- Layered rain ---
 setInterval(() => {
-  createDrop(rainGlyphs[Math.floor(Math.random() * rainGlyphs.length)],
-    Math.random() * window.innerWidth, 0.6);
+  createDrop(randomChar(), Math.random() * window.innerWidth, 0.6);
 }, 260);
 
 setInterval(() => {
-  createDrop(rainGlyphs[Math.floor(Math.random() * rainGlyphs.length)],
-    Math.random() * window.innerWidth, 1);
+  createDrop(randomChar(), Math.random() * window.innerWidth, 1);
 }, 120);
 
-// Poem lines → dispersed letter rain
+setInterval(() => {
+  createDrop(randomChar(), Math.random() * window.innerWidth, 1.8);
+}, 300);
+
+// --- Poem lines: break into letters and disperse ---
 setInterval(() => {
   const line = poem[Math.floor(Math.random() * poem.length)];
   const baseX = window.innerWidth / 2 + (Math.random() - 0.5) * window.innerWidth * 0.2;
-
   const letters = line.split("");
   letters.forEach((letter, i) => {
     setTimeout(() => {
@@ -158,24 +143,20 @@ setInterval(() => {
   });
 }, 5000);
 
-// user input → gently spaced letter rain
+// --- User input: letters fall together, drift, fade ---
+const input = document.getElementById("input");
 input.addEventListener("keydown", (e) => {
   if (e.key === "Enter" && input.value.trim() !== "") {
     const letters = input.value.split("");
     const center = window.innerWidth / 2;
-    const spread = window.innerWidth * 0.18; // controls how wide it spreads
-    const baseX = center + ((Math.random() - 0.5) * 0.7 + (Math.random() - 0.5) * 0.3) * spread;
-
+    const spread = window.innerWidth * 0.18;
+    const baseX = center + (Math.random() - 0.5 + Math.random() - 0.5) * spread;
 
     letters.forEach((letter, i) => {
       if (letter === " ") return;
 
       setTimeout(() => {
-        createDrop(
-          letter,
-          baseX + (Math.random() * 12 - 6),
-          0.85 + Math.random() * 0.4
-        );
+        createDrop(letter, baseX + (Math.random() * 12 - 6), 0.85 + Math.random() * 0.5);
       }, i * 140 + Math.random() * 120);
     });
 
@@ -186,4 +167,3 @@ input.addEventListener("keydown", (e) => {
 
 </body>
 </html>
-
