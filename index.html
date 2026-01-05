@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Rain</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<style>
+  body {
+    margin: 0;
+    background: #0b0b0b;
+    color: #6fa8dc;
+    font-family: monospace;
+    overflow: hidden;
+  }
+
+  #rain {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  .drop {
+    position: absolute;
+    white-space: nowrap;
+    opacity: 0.9;
+    animation: fall linear forwards;
+  }
+
+  @keyframes fall {
+    from {
+      transform: translateY(-10px);
+      opacity: 0.9;
+    }
+    to {
+      transform: translateY(110vh);
+      opacity: 0;
+    }
+  }
+
+  #input {
+    position: fixed;
+    bottom: 1rem;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,0.6);
+    border: 1px solid #333;
+    color: #aaa;
+    padding: 0.5rem;
+    width: 80%;
+    max-width: 400px;
+    font-family: monospace;
+  }
+</style>
+</head>
+
+<body>
+
+<div id="rain"></div>
+
+<input
+  id="input"
+  type="text"
+  placeholder="Add a word or line…"
+  maxlength="60"
+/>
+
+<script>
+const rain = document.getElementById("rain");
+const input = document.getElementById("input");
+
+const chars = ["|", ".", ":", "/", "\\", "~"];
+const poem = [
+  "water moves",
+  "color waits",
+  "rain becomes cloth",
+  "held briefly",
+  "falling without return"
+];
+
+function createDrop(text) {
+  const drop = document.createElement("div");
+  drop.className = "drop";
+  drop.textContent = text;
+
+  const x = Math.random() * window.innerWidth;
+  const duration = 6 + Math.random() * 6;
+
+  drop.style.left = x + "px";
+  drop.style.animationDuration = duration + "s";
+
+  rain.appendChild(drop);
+
+  setTimeout(() => drop.remove(), duration * 1000);
+}
+
+function randomChar() {
+  return chars[Math.floor(Math.random() * chars.length)];
+}
+
+// background ASCII rain
+setInterval(() => {
+  createDrop(randomChar());
+}, 120);
+
+// occasional poem lines
+setInterval(() => {
+  const line = poem[Math.floor(Math.random() * poem.length)];
+  createDrop(line);
+}, 4000);
+
+// visitor input
+input.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && input.value.trim() !== "") {
+    createDrop(input.value.trim());
+    input.value = "";
+  }
+});
+</script>
+
+</body>
+</html>
