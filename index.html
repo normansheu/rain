@@ -101,7 +101,7 @@ function createDrop(text, xBase, speedMultiplier = 1) {
 
   rain.appendChild(drop);
 
-  const fadeStart = VIEWPORT_HEIGHT * 0.72;
+  const fadeStart = VIEWPORT_HEIGHT * 0.69;
   const fadeEnd = VIEWPORT_HEIGHT * 0.98;
   const startTime = performance.now();
 
@@ -112,7 +112,7 @@ function createDrop(text, xBase, speedMultiplier = 1) {
 
     if (y > fadeStart) {
       const t = Math.min((y - fadeStart) / (fadeEnd - fadeStart), 1);
-      drop.style.opacity = (0.85 * (1 - t)).toFixed(2);
+      drop.style.opacity = (0.69 * (1 - t)).toFixed(2);
 
       if (Math.random() < t * 0.4) {
         drop.textContent =
@@ -149,7 +149,10 @@ setInterval(() => {
 input.addEventListener("keydown", (e) => {
   if (e.key === "Enter" && input.value.trim() !== "") {
     const letters = input.value.split("");
-    const baseX = Math.random() * window.innerWidth;
+    const center = window.innerWidth / 2;
+    const spread = window.innerWidth * 0.18; // controls how wide it spreads
+    const baseX = center + (Math.random() - 0.5 + Math.random() - 0.5) * spread;
+
 
     letters.forEach((letter, i) => {
       if (letter === " ") return;
