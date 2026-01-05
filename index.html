@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>Rain Altar</title>
+<title>Rain Altar Poem</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
 <style>
   body {
@@ -51,7 +51,7 @@ const rain = document.getElementById("rain");
 const VIEWPORT_HEIGHT = window.innerHeight;
 const FALL_DISTANCE = VIEWPORT_HEIGHT * 1.1;
 
-const rainGlyphs = [".", "/", "\\", "|", ":", "+", “*”, “!”];
+const rainGlyphs = [".", "/", "\\", "|", ":", "+", "*", "!"];
 const poem = [
   "花の色は",
   "うつりにけりな",
@@ -61,46 +61,37 @@ const poem = [
   "好雨知時節，當春乃發生",
   "隨風潛入夜，潤物細無聲",
   "野徑雲俱黑，江船火獨明",
-  "曉看紅溼處，花重錦官城",
+  "曉看紅溼處，花重錦官城"
 ];
 
-// Create a single drop that falls with drift
-function createDrop(char, xBase, speed = 1) {
+// --- Create a falling letter ---
+function createDrop(char, x, y=0, speed=1) {
   const drop = document.createElement("div");
   drop.className = "drop";
   drop.textContent = char;
-
-  const xOffset = Math.random() * 36 - 18;
-  let x = xBase + xOffset;
-
-  // animation parameters
-  const duration = (5 + Math.random() * 6) / speed;
-  const drift = Math.random() * 70 - 35;
-
   drop.style.left = x + "px";
-  drop.style.top = "-20px";
+  drop.style.top = y + "px";
 
-  rain.appendChild(drop);
-
-  const fadeStart = VIEWPORT_HEIGHT * 0.65;
+  const driftAmount = (Math.random() * 40 - 20); // letters disperse horizontally
+  const duration = (5 + Math.random() * 6) / speed;
+  const fadeStart = VIEWPORT_HEIGHT * 0.85;
   const fadeEnd = VIEWPORT_HEIGHT * 0.98;
   const startTime = performance.now();
 
   function animate(time) {
-    const elapsed = (time - startTime) / 1000;
+    const elapsed = (time - startTime)/1000;
     const progress = elapsed / duration;
-    const y = progress * FALL_DISTANCE;
-    const currentX = x + drift * progress;
+    const yPos = progress * FALL_DISTANCE;
+    const xPos = x + driftAmount * progress;
 
-    drop.style.transform = `translate(${drift * progress}px, ${y}px)`;
+    drop.style.transform = `translate(${xPos - x}px, ${yPos}px)`;
 
-    if (y > fadeStart) {
-      const t = Math.min((y - fadeStart) / (fadeEnd - fadeStart), 1);
-      drop.style.opacity = (0.85 * (1 - t)).toFixed(2);
-
-      // dissolve letters into rain glyphs gradually
-      if (Math.random() < t * 0.4) {
-        drop.textContent = rainGlyphs[Math.floor(Math.random() * rainGlyphs.length)];
+    // Fade and dissolve into glyphs
+    if (yPos > fadeStart) {
+      const t = Math.min((yPos - fadeStart)/(fadeEnd - fadeStart),1);
+      drop.style.opacity = (0.85*(1-t)).toFixed(2);
+      if (Math.random() < t*0.5) {
+        drop.textContent = rainGlyphs[Math.floor(Math.random()*rainGlyphs.length)];
       }
     }
 
@@ -114,45 +105,48 @@ function createDrop(char, xBase, speed = 1) {
   requestAnimationFrame(animate);
 }
 
-// Random ASCII glyph
+// --- Layered background rain ---
 function randomChar() {
-  return rainGlyphs[Math.floor(Math.random() * rainGlyphs.length)];
+  return rainGlyphs[Math.floor(Math.random()*rainGlyphs.length)];
 }
 
-// --- Background layered rain ---
-setInterval(() => createDrop(randomChar(), Math.random() * window.innerWidth, 0.6), 260);
-setInterval(() => createDrop(randomChar(), Math.random() * window.innerWidth, 1), 120);
-setInterval(() => createDrop(randomChar(), Math.random() * window.innerWidth, 1.8), 300);
+setInterval(()=>createDrop(randomChar(), Math.random()*window.innerWidth, -20, 0.6), 260);
+setInterval(()=>createDrop(randomChar(), Math.random()*window.innerWidth, -20, 1), 120);
+setInterval(()=>createDrop(randomChar(), Math.random()*window.innerWidth, -20, 1.8), 300);
 
-// --- Poem lines: dispersed letters ---
-setInterval(() => {
-  const line = poem[Math.floor(Math.random() * poem.length)];
-  const baseX = window.innerWidth / 2 + (Math.random() - 0.5) * window.innerWidth * 0.2;
-  line.split("").forEach((letter, i) => {
-    setTimeout(() => {
-      createDrop(letter, baseX + (Math.random() * 12 - 6), 0.8 + Math.random() * 0.5);
-    }, i * 100 + Math.random() * 80);
+// --- Poem lines fall horizontally, then letters disperse ---
+setInterval(()=>{
+  const line = poem[Math.floor(Math.random()*poem.length)];
+  const baseX = window.innerWidth/2 - (line.length*8); // start roughly centered
+  const baseY = -20;
+
+  line.split("").forEach((letter,i)=>{
+    setTimeout(()=>{
+      // Slight horizontal offset to preserve readability at first
+      const letterX = baseX + i*14; 
+      createDrop(letter, letterX, baseY, 0.8 + Math.random()*0.5);
+    }, i*100);
   });
 }, 5000);
 
 // --- User input ---
 const input = document.getElementById("input");
-input.addEventListener("keydown", e => {
-  if (e.key === "Enter" && input.value.trim() !== "") {
-    e.preventDefault(); // prevents default mobile behavior
+input.addEventListener("keydown", e=>{
+  if(e.key==="Enter" && input.value.trim()!=="") {
+    e.preventDefault();
     const letters = input.value.split("");
-    const center = window.innerWidth / 2;
-    const spread = window.innerWidth * 0.18;
-    const baseX = center + (Math.random() - 0.5 + Math.random() - 0.5) * spread;
+    const center = window.innerWidth/2;
+    const spread = window.innerWidth*0.18;
+    const baseX = center + (Math.random()-0.5 + Math.random()-0.5)*spread;
 
-    letters.forEach((letter, i) => {
-      if (letter === " ") return;
-      setTimeout(() => {
-        createDrop(letter, baseX + (Math.random() * 12 - 6), 0.85 + Math.random() * 0.5);
-      }, i * 140 + Math.random() * 120);
+    letters.forEach((letter,i)=>{
+      if(letter==="") return;
+      setTimeout(()=>{
+        createDrop(letter, baseX + (Math.random()*12 -6), 0, 0.85 + Math.random()*0.5);
+      }, i*140 + Math.random()*120);
     });
 
-    input.value = "";
+    input.value="";
   }
 });
 </script>
