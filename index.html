@@ -112,7 +112,7 @@ function createDrop(text, xBase, speedMultiplier = 1) {
 
     if (y > fadeStart) {
       const t = Math.min((y - fadeStart) / (fadeEnd - fadeStart), 1);
-      drop.style.opacity = (0.69 * (1 - t)).toFixed(2);
+      drop.style.opacity = (0.85 * (1 - t)).toFixed(2);
 
       if (Math.random() < t * 0.4) {
         drop.textContent =
