@@ -2,16 +2,18 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>Indigo Dispersion</title>
+<title>Indigo Rain Mobile</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 
 <style>
   body {
     margin: 0;
-    background: #05050a; 
-    color: #6a5acd; /* Slate Blue / Indigo */
-    font-family: 'serif';
+    background: #010205; 
+    color: #3d5afe; /* Deep Indigo Blue */
+    font-family: 'Courier New', Courier, monospace;
     overflow: hidden;
+    /* Prevents accidental zooming/scrolling on mobile */
+    touch-action: none; 
   }
 
   #rain {
@@ -23,72 +25,66 @@
   .drop {
     position: absolute;
     white-space: nowrap;
-    opacity: 0.85;
-    font-size: 20px;
-    /* Adding a slight glow to the indigo text */
-    text-shadow: 0 0 8px rgba(106, 90, 205, 0.6);
+    opacity: 0.9;
+    /* Adjusted for mobile legibility */
+    font-size: 16px; 
+    font-weight: bold;
+    text-shadow: 0 0 4px rgba(61, 90, 254, 0.6);
     animation-timing-function: linear;
     animation-fill-mode: forwards;
   }
 
   @keyframes fall {
-    from {
-      transform: translate(0, -20px);
-    }
-    to {
-      /* The drift variable determines how far apart they spread */
-      transform: translate(var(--drift), var(--fall-distance));
-    }
+    from { transform: translate(0, -30px); }
+    to { transform: translate(var(--drift), var(--fall-distance)); }
   }
 
   #input {
     position: fixed;
-    bottom: 2rem;
+    bottom: 1.5rem;
     left: 50%;
     transform: translateX(-50%);
-    background: rgba(10, 10, 30, 0.9);
-    border: 1px solid #4b0082;
-    color: #9370db;
-    padding: 0.8rem;
-    width: 60%;
+    background: rgba(1, 2, 5, 0.95);
+    border: 1px solid #1a237e;
+    color: #7986cb;
+    padding: 12px;
+    width: 85%; /* Wider for mobile thumb typing */
     max-width: 400px;
     font-family: monospace;
     text-align: center;
-    border-radius: 4px;
+    border-radius: 0;
     outline: none;
+    border-bottom: 2px solid #3d5afe;
+    z-index: 10;
   }
 </style>
 </head>
 <body>
 
 <div id="rain"></div>
-
-<input id="input" type="text" placeholder="Type a line and press Enter" maxlength="50" />
+<input id="input" type="text" placeholder="TAP TO TYPE" maxlength="40" />
 
 <script>
 const rain = document.getElementById("rain");
 const input = document.getElementById("input");
 
 const VIEWPORT_HEIGHT = window.innerHeight;
-const FALL_DISTANCE = VIEWPORT_HEIGHT * 1.2;
+const FALL_DISTANCE = VIEWPORT_HEIGHT * 1.15;
 
-const rainGlyphs = [".", "·", "ı", "¦", "‖"];
+const rainGlyphs = ["*", "+", "!", ":", ".", "°", "i", "»", "░"];
 const poem = [
   "花の色は", "うつりにけりな", "いたづらに",
   "わが身世にふる", "ながめせしまに",
   "好雨知時節", "當春乃發生", "隨風潛入夜", "潤物細無聲"
 ];
 
-/**
- * Creates a single falling character
- */
-function createDrop(char, xPos, speedMultiplier, driftValue) {
+function createDrop(char, xPos, speedMultiplier, driftValue, isPoem = false) {
   const drop = document.createElement("div");
   drop.className = "drop";
   drop.textContent = char;
   drop.style.left = xPos + "px";
 
-  const duration = (6 + Math.random() * 4) / speedMultiplier;
+  const duration = (isPoem ? (7 + Math.random() * 5) : (3 + Math.random() * 3)) / speedMultiplier;
   
   drop.style.setProperty("--drift", `${driftValue}px`);
   drop.style.setProperty("--fall-distance", FALL_DISTANCE + "px");
@@ -96,73 +92,78 @@ function createDrop(char, xPos, speedMultiplier, driftValue) {
 
   rain.appendChild(drop);
 
-  // Fade out logic
-  const fadeStart = VIEWPORT_HEIGHT * 0.7;
-  const fadeEnd = VIEWPORT_HEIGHT * 1.0;
+  const fadeStart = VIEWPORT_HEIGHT * 0.55;
+  const fadeEnd = VIEWPORT_HEIGHT * 0.95;
   const startTime = performance.now();
+  let hasDissolved = false;
 
   function update(time) {
     const elapsed = (time - startTime) / 1000;
-    const progress = elapsed / duration;
+    const progress = Math.min(elapsed / duration, 1);
     const y = progress * FALL_DISTANCE;
 
     if (y > fadeStart) {
       const t = Math.min((y - fadeStart) / (fadeEnd - fadeStart), 1);
-      drop.style.opacity = (0.85 * (1 - t)).toFixed(2);
+      drop.style.opacity = (0.9 * (1 - t)).toFixed(2);
+
+      if (!hasDissolved && Math.random() < (t * 0.4)) {
+        drop.textContent = rainGlyphs[Math.floor(Math.random() * rainGlyphs.length)];
+        drop.style.color = "#5c6bc0";
+        if (t > 0.8) hasDissolved = true;
+      }
     }
 
-    if (elapsed < duration) {
-      requestAnimationFrame(update);
-    }
+    if (progress < 1) requestAnimationFrame(update);
   }
 
   requestAnimationFrame(update);
   setTimeout(() => drop.remove(), duration * 1000);
 }
 
-/**
- * Splits a string and drops it so it disperses
- */
-function dropDispersingLine(text, centerX, speed = 0.6) {
+function dropDispersingLine(text, speed = 0.5) {
   const characters = text.split("");
-  const charSpacing = 22; // Initial distance between letters
+  const charSpacing = 18; // Tighter spacing for mobile
   const totalWidth = characters.length * charSpacing;
+  
+  // MOBILE SAFE ZONE: Calculate a center that doesn't push characters off-screen
+  const margin = 20; 
+  const minX = totalWidth / 2 + margin;
+  const maxX = window.innerWidth - (totalWidth / 2 + margin);
+  const centerX = Math.max(minX, Math.min(maxX, Math.random() * window.innerWidth));
+
   const startX = centerX - totalWidth / 2;
 
   characters.forEach((char, i) => {
     if (char === " ") return;
-
-    // Calculate initial X for this specific character
     const xPos = startX + (i * charSpacing);
-    
-    // DRIFT LOGIC: 
-    // Characters on the left of the word drift further left.
-    // Characters on the right drift further right.
     const centerOffset = i - (characters.length / 2);
-    const drift = (centerOffset * 40) + (Math.random() * 60 - 30);
+    // Drift is slightly reduced for mobile to keep characters on-screen longer
+    const drift = (centerOffset * 35) + (Math.random() * 30 - 15);
 
-    createDrop(char, xPos, speed, drift);
+    createDrop(char, xPos, speed, drift, true);
   });
 }
 
-// 1. Ambient Background Rain (standard drops)
+// 1. Ambient Background Rain (faster, straighter)
 setInterval(() => {
   const x = Math.random() * window.innerWidth;
-  createDrop(rainGlyphs[Math.floor(Math.random() * rainGlyphs.length)], x, 0.8, (Math.random() * 40 - 20));
-}, 150);
+  const glyph = rainGlyphs[Math.floor(Math.random() * rainGlyphs.length)];
+  createDrop(glyph, x, 1.5, (Math.random() * 30 - 15), false);
+}, 120);
 
-// 2. Periodic Poem Lines (dispersing)
+// 2. Periodic Poem Lines
 setInterval(() => {
   const randomLine = poem[Math.floor(Math.random() * poem.length)];
-  const x = Math.random() * window.innerWidth;
-  dropDispersingLine(randomLine, x, 0.5);
+  dropDispersingLine(randomLine, 0.4);
 }, 5000);
 
-// 3. User Input (dispersing)
+// 3. User Input
 input.addEventListener("keydown", (e) => {
   if (e.key === "Enter" && input.value.trim() !== "") {
-    dropDispersingLine(input.value, window.innerWidth / 2, 0.8);
+    // Force user text to drop from the center of the screen
+    dropDispersingLine(input.value, 0.7);
     input.value = "";
+    input.blur(); // Hides mobile keyboard after enter
   }
 });
 </script>
