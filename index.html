@@ -51,18 +51,12 @@ const rain = document.getElementById("rain");
 const VIEWPORT_HEIGHT = window.innerHeight;
 const FALL_DISTANCE = VIEWPORT_HEIGHT * 1.1;
 
-// Expanded ASCII glyphs for a more "altar" feel
 const rainGlyphs = [".", "·", "+", "‖", "¦", "∫", "⁕", "⁖", "!", "░"];
 const poem = [
-  "花の色は",
-  "うつりにけりな",
-  "いたづらに",
-  "わが身世にふる",
-  "ながめせしまに",
-  "好雨知時節，當春乃發生",
-  "隨風潛入夜，潤物細無聲",
-  "野徑雲俱黑，江船火獨明",
-  "曉看紅溼處，花重錦官城",
+  "花の色は", "うつりにけりな", "いたづらに",
+  "わが身世にふる", "ながめせしまに",
+  "好雨知時節，當春乃發生", "隨風潛入夜，潤物細無聲",
+  "野徑雲俱黑，江船火獨明", "曉看紅溼處，花重錦官城",
 ];
 
 function createDrop(char, xBase, speed = 1, manualDrift = null) {
@@ -70,7 +64,7 @@ function createDrop(char, xBase, speed = 1, manualDrift = null) {
   drop.className = "drop";
   drop.textContent = char;
 
-  const drift = manualDrift !== null ? manualDrift : (Math.random() * 40 - 20);
+  const drift = manualDrift !== null ? manualDrift : (Math.random() * 20 - 10);
   
   drop.style.left = xBase + "px";
   drop.style.top = "-20px";
@@ -114,49 +108,52 @@ function randomChar() {
 
 // --- Background layered rain ---
 setInterval(() => createDrop(randomChar(), Math.random() * window.innerWidth, 0.6), 260);
-setInterval(() => createDrop(randomChar(), Math.random() * window.innerWidth, 1), 120);
-setInterval(() => createDrop(randomChar(), Math.random() * window.innerWidth, 1.8), 300);
+setInterval(() => createDrop(randomChar(), Math.random() * window.innerWidth, 1.2, 0), 120); // Straighter
+setInterval(() => createDrop(randomChar(), Math.random() * window.innerWidth, 1.8, 0), 300); // Straighter/Faster
 
 // --- Poem lines ---
 setInterval(() => {
   const line = poem[Math.floor(Math.random() * poem.length)];
   const charSpacing = 18; 
   const totalWidth = line.length * charSpacing;
-  const centerX = window.innerWidth / 2 + (Math.random() - 0.5) * window.innerWidth * 0.3;
+  
+  const margin = totalWidth / 2 + 20;
+  const centerX = margin + Math.random() * (window.innerWidth - margin * 2);
   const startX = centerX - totalWidth / 2;
+
+  // 25% chance for "Heavy Rain" (vertical fall, no dispersion)
+  const isHeavyRain = Math.random() < 0.25;
 
   line.split("").forEach((letter, i) => {
     const centerOffset = i - (line.length - 1) / 2;
-    const charDrift = centerOffset * 12; 
+    const charDrift = isHeavyRain ? 0 : centerOffset * 12; 
 
-    // Scrambled delay for random start
     const randomStartDelay = Math.random() * 800;
-
     setTimeout(() => {
       createDrop(letter, startX + (i * charSpacing), 0.8 + Math.random() * 0.3, charDrift);
     }, randomStartDelay);
   });
 }, 5000);
 
-// --- User input: Uniformly random fall ---
-const input = document.getElementById("input");
-input.addEventListener("keydown", e => {
-  if (e.key === "Enter" && input.value.trim() !== "") {
+// --- User input ---
+const inputBox = document.getElementById("input");
+inputBox.addEventListener("keydown", e => {
+  if (e.key === "Enter" && inputBox.value.trim() !== "") {
     e.preventDefault();
-    const text = input.value;
+    const text = inputBox.value;
     const letters = text.split("");
     const charSpacing = 16;
     const totalWidth = letters.length * charSpacing;
-    const startX = (window.innerWidth / 2) - totalWidth / 2;
+    
+    // Now falls from a random general area, not just the dead center
+    const inputMargin = totalWidth / 2 + 30;
+    const inputCenterX = inputMargin + Math.random() * (window.innerWidth - inputMargin * 2);
+    const startX = inputCenterX - totalWidth / 2;
 
     letters.forEach((letter, i) => {
       if (letter === " ") return;
-      
       const centerOffset = i - (letters.length - 1) / 2;
       const charDrift = centerOffset * 15; 
-
-      // FIXED: Each letter gets a random delay between 0 and 1000ms
-      // This prevents the "left-to-right" falling pattern.
       const randomStartDelay = Math.random() * 1000;
 
       setTimeout(() => {
@@ -164,10 +161,9 @@ input.addEventListener("keydown", e => {
       }, randomStartDelay);
     });
 
-    input.value = "";
+    inputBox.value = "";
   }
 });
 </script>
-
 </body>
 </html>
