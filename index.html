@@ -22,8 +22,10 @@
   .drop {
     position: absolute;
     white-space: nowrap;
-    opacity: 0.9;
-    animation: fall linear forwards;
+    opacity: 0.85;
+    animation-name: fall;
+    animation-timing-function: linear;
+    animation-fill-mode: forwards;
   }
 
   @keyframes fall {
@@ -77,41 +79,73 @@ const poem = [
   "falling without return"
 ];
 
-function createDrop(text) {
+// create a single falling element
+function createDrop(text, speedMultiplier = 1) {
   const drop = document.createElement("div");
   drop.className = "drop";
   drop.textContent = text;
 
   const x = Math.random() * window.innerWidth;
-  const duration = 6 + Math.random() * 6;
+  const baseDuration = 5 + Math.random() * 6;
+  const duration = baseDuration / speedMultiplier;
 
   drop.style.left = x + "px";
   drop.style.animationDuration = duration + "s";
 
   rain.appendChild(drop);
-
   setTimeout(() => drop.remove(), duration * 1000);
 }
 
+// random ASCII character
 function randomChar() {
   return chars[Math.floor(Math.random() * chars.length)];
 }
 
-// background ASCII rain
+// --- RAIN LAYERS ---
+
+// slow mist
 setInterval(() => {
-  createDrop(randomChar());
+  createDrop(randomChar(), 0.6);
+}, 250);
+
+// normal rain
+setInterval(() => {
+  createDrop(randomChar(), 1);
 }, 120);
 
-// occasional poem lines
+// fast streaks
+setInterval(() => {
+  createDrop(randomChar(), 1.8);
+}, 300);
+
+// occasional poem lines (medium-slow)
 setInterval(() => {
   const line = poem[Math.floor(Math.random() * poem.length)];
-  createDrop(line);
-}, 4000);
+  createDrop(line, 0.8);
+}, 5000);
 
-// visitor input
+// --- BROKEN TEXT INPUT ---
+
+function breakIntoFragments(text) {
+  // split by spaces, then lightly fragment words
+  return text.split(" ").flatMap(word => {
+    if (word.length <= 3) return [word];
+    const mid = Math.floor(word.length / 2);
+    return [word.slice(0, mid), word.slice(mid)];
+  });
+}
+
 input.addEventListener("keydown", (e) => {
   if (e.key === "Enter" && input.value.trim() !== "") {
-    createDrop(input.value.trim());
+    const fragments = breakIntoFragments(input.value.trim());
+
+    fragments.forEach((frag, i) => {
+      setTimeout(() => {
+        const speed = 0.7 + Math.random() * 1.2;
+        createDrop(frag, speed);
+      }, i * 200);
+    });
+
     input.value = "";
   }
 });
