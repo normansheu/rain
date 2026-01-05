@@ -34,11 +34,9 @@
   @keyframes fall {
     from {
       transform: translate(0, -10px);
-      opacity: 0.9;
     }
     to {
       transform: translate(var(--drift), var(--fall-distance));
-      opacity: 0;
     }
   }
 
@@ -66,7 +64,7 @@
 <input
   id="input"
   type="text"
-  placeholder="Add a word or line…"
+  placeholder="Offer yourself to the rain"
   maxlength="60"
 />
 
@@ -74,12 +72,10 @@
 const rain = document.getElementById("rain");
 const input = document.getElementById("input");
 
-// FIXED viewport height (prevents mobile keyboard issues)
 const VIEWPORT_HEIGHT = window.innerHeight;
 const FALL_DISTANCE = VIEWPORT_HEIGHT * 1.1;
 
-const chars = ["|", ".", ":", "/", "\\", "~", "+", "*"];
-const dissolveChars = [".", "/", "\\", "|"];
+const rainGlyphs = [".", "/", "\\", "|", ":", "+", "*"];
 const poem = [
   "water moves",
   "color waits",
@@ -93,68 +89,63 @@ function createDrop(text, xBase, speedMultiplier = 1) {
   drop.className = "drop";
   drop.textContent = text;
 
-  const xOffset = Math.random() * 24 - 12;
+  const xOffset = Math.random() * 36 - 18;
   drop.style.left = (xBase + xOffset) + "px";
 
   const duration = (5 + Math.random() * 6) / speedMultiplier;
-  const drift = (Math.random() * 60 - 30).toFixed(1) + "px";
+  const drift = (Math.random() * 70 - 35).toFixed(1) + "px";
 
   drop.style.setProperty("--drift", drift);
   drop.style.setProperty("--fall-distance", FALL_DISTANCE + "px");
-  drop.style.animationName = "fall";
-  drop.style.animationDuration = duration + "s";
+  drop.style.animation = `fall ${duration}s linear forwards`;
 
   rain.appendChild(drop);
 
-  // dissolve into rain glyph near bottom 10%
-  const dissolvePoint = VIEWPORT_HEIGHT * 0.9;
+  const fadeStart = VIEWPORT_HEIGHT * 0.85;
+  const fadeEnd = VIEWPORT_HEIGHT * 0.98;
   const startTime = performance.now();
 
-  function checkPosition(time) {
+  function update(time) {
     const elapsed = (time - startTime) / 1000;
     const progress = elapsed / duration;
     const y = progress * FALL_DISTANCE;
 
-    if (y > dissolvePoint && !drop.dataset.dissolved) {
-      drop.textContent =
-        dissolveChars[Math.floor(Math.random() * dissolveChars.length)];
-      drop.dataset.dissolved = "true";
+    if (y > fadeStart) {
+      const t = Math.min((y - fadeStart) / (fadeEnd - fadeStart), 1);
+      drop.style.opacity = (0.85 * (1 - t)).toFixed(2);
+
+      if (Math.random() < t * 0.4) {
+        drop.textContent =
+          rainGlyphs[Math.floor(Math.random() * rainGlyphs.length)];
+      }
     }
 
     if (elapsed < duration) {
-      requestAnimationFrame(checkPosition);
+      requestAnimationFrame(update);
     }
   }
 
-  requestAnimationFrame(checkPosition);
+  requestAnimationFrame(update);
   setTimeout(() => drop.remove(), duration * 1000);
 }
 
-function randomChar() {
-  return chars[Math.floor(Math.random() * chars.length)];
-}
-
-// --- RAIN LAYERS ---
-
+// layered rain
 setInterval(() => {
-  createDrop(randomChar(), Math.random() * window.innerWidth, 0.6);
+  createDrop(rainGlyphs[Math.floor(Math.random() * rainGlyphs.length)],
+    Math.random() * window.innerWidth, 0.6);
 }, 260);
 
 setInterval(() => {
-  createDrop(randomChar(), Math.random() * window.innerWidth, 1);
+  createDrop(rainGlyphs[Math.floor(Math.random() * rainGlyphs.length)],
+    Math.random() * window.innerWidth, 1);
 }, 120);
 
 setInterval(() => {
-  createDrop(randomChar(), Math.random() * window.innerWidth, 1.8);
-}, 300);
+  createDrop(poem[Math.floor(Math.random() * poem.length)],
+    Math.random() * window.innerWidth, 0.8);
+}, 5200);
 
-setInterval(() => {
-  const line = poem[Math.floor(Math.random() * poem.length)];
-  createDrop(line, Math.random() * window.innerWidth, 0.8);
-}, 5000);
-
-// --- CLUSTERED LETTER INPUT ---
-
+// user input → gently spaced letter rain
 input.addEventListener("keydown", (e) => {
   if (e.key === "Enter" && input.value.trim() !== "") {
     const letters = input.value.split("");
@@ -164,8 +155,12 @@ input.addEventListener("keydown", (e) => {
       if (letter === " ") return;
 
       setTimeout(() => {
-        createDrop(letter, baseX, 0.9 + Math.random() * 0.5);
-      }, i * 90 + Math.random() * 80);
+        createDrop(
+          letter,
+          baseX + (Math.random() * 12 - 6),
+          0.85 + Math.random() * 0.4
+        );
+      }, i * 140 + Math.random() * 120);
     });
 
     input.value = "";
