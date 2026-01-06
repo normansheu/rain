@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <title>Rain Altar</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content"/>
 <style>
   body {
     margin: 0;
@@ -11,6 +11,9 @@
     color: #6fa8dc;
     font-family: monospace;
     overflow: hidden;
+    /* Extra precaution to keep the background stable */
+    height: 100vh;
+    width: 100vw;
   }
 
   #rain {
@@ -27,17 +30,19 @@
 
   #input {
     position: fixed;
-    bottom: 1rem;
+    bottom: 1.5rem; /* Slightly more room for mobile thumbs */
     left: 50%;
     transform: translateX(-50%);
-    background: rgba(0,0,0,0.6);
+    background: rgba(0,0,0,0.8);
     border: 1px solid #333;
     color: #aaa;
-    padding: 0.5rem;
-    width: 80%;
+    padding: 0.7rem;
+    width: 85%;
     max-width: 400px;
     font-family: monospace;
     font-size: 16px;
+    outline: none;
+    -webkit-appearance: none; /* Mobile Safari fix */
   }
 </style>
 </head>
@@ -48,8 +53,14 @@
 
 <script>
 const rain = document.getElementById("rain");
-const VIEWPORT_HEIGHT = document.documentElement.clientHeight;
-const FALL_DISTANCE = VIEWPORT_HEIGHT * 1.1;
+// Track height dynamically for mobile rotations
+let VIEWPORT_HEIGHT = window.innerHeight;
+let FALL_DISTANCE = VIEWPORT_HEIGHT * 1.1;
+
+window.addEventListener('resize', () => {
+  VIEWPORT_HEIGHT = window.innerHeight;
+  FALL_DISTANCE = VIEWPORT_HEIGHT * 1.1;
+});
 
 const rainGlyphs = [".", "·", "+", "‖", "¦", "∫", "⁕", "⁖", "!", "░"];
 const poem = [
@@ -108,8 +119,8 @@ function randomChar() {
 
 // --- Background layered rain ---
 setInterval(() => createDrop(randomChar(), Math.random() * window.innerWidth, 0.6), 260);
-setInterval(() => createDrop(randomChar(), Math.random() * window.innerWidth, 1.2, 0), 120); // Straighter
-setInterval(() => createDrop(randomChar(), Math.random() * window.innerWidth, 1.8, 0), 300); // Straighter/Faster
+setInterval(() => createDrop(randomChar(), Math.random() * window.innerWidth, 1.2, 0), 120);
+setInterval(() => createDrop(randomChar(), Math.random() * window.innerWidth, 1.8, 0), 300);
 
 // --- Poem lines ---
 setInterval(() => {
@@ -121,7 +132,6 @@ setInterval(() => {
   const centerX = margin + Math.random() * (window.innerWidth - margin * 2);
   const startX = centerX - totalWidth / 2;
 
-  // 25% chance for "Heavy Rain" (vertical fall, no dispersion)
   const isHeavyRain = Math.random() < 0.25;
 
   line.split("").forEach((letter, i) => {
@@ -140,12 +150,15 @@ const inputBox = document.getElementById("input");
 inputBox.addEventListener("keydown", e => {
   if (e.key === "Enter" && inputBox.value.trim() !== "") {
     e.preventDefault();
+    
+    // Auto-hide keyboard for better visibility
+    inputBox.blur();
+
     const text = inputBox.value;
     const letters = text.split("");
     const charSpacing = 16;
     const totalWidth = letters.length * charSpacing;
     
-    // Now falls from a random general area, not just the dead center
     const inputMargin = totalWidth / 2 + 30;
     const inputCenterX = inputMargin + Math.random() * (window.innerWidth - inputMargin * 2);
     const startX = inputCenterX - totalWidth / 2;
@@ -161,10 +174,8 @@ inputBox.addEventListener("keydown", e => {
           letter,
           startX + (i * charSpacing),
           0.9,
-          charDrift,
-          0.25   // letters stay intact for first ~25% of fall
+          charDrift
         );
-
       }, randomStartDelay);
     });
 
