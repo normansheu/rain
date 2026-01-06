@@ -66,9 +66,7 @@ const poem = [
   "野徑雲俱黑，江船火獨明", "曉看紅溼處，花重錦官城",
 ];
 
-// --- Refined Lightning & Probability ---
 function triggerLightning(isPowerful = false) {
-  // Monsoon burst probability increased to 8%
   const isSuper = Math.random() < 0.08;
   const isViolet = !isSuper && Math.random() < 0.15;
   const flashClass = isSuper ? 'super-flash' : (isViolet ? 'flash-violet' : 'flash');
@@ -87,13 +85,11 @@ function triggerLightning(isPowerful = false) {
   const roll = Math.random();
 
   if (!isPowerful) {
-    // Probabilities: 1(55%), 2(25%), 3(15%), 4(5%)
     if (roll > 0.95) strikeCount = 4;
     else if (roll > 0.80) strikeCount = 3;
     else if (roll > 0.55) strikeCount = 2;
     else strikeCount = 1;
   } else {
-    // Powerful strikes (weighted but still unpredictable)
     if (roll > 0.7) strikeCount = 4;
     else if (roll > 0.4) strikeCount = 3;
     else strikeCount = 2;
@@ -133,7 +129,8 @@ function createDrop(char, xBase, speed = 1, manualDrift = null) {
   const duration = (5 + Math.random() * 6) / (speed * rainIntensityMultiplier);
   rain.appendChild(drop);
 
-  const fadeStart = VIEWPORT_HEIGHT * 0.65;
+  // Dissolve threshold shifted to 70% depth (bottom 30% of screen)
+  const fadeStart = VIEWPORT_HEIGHT * 0.70;
   const fadeEnd = VIEWPORT_HEIGHT * 0.98;
   const startTime = performance.now();
 
@@ -142,11 +139,16 @@ function createDrop(char, xBase, speed = 1, manualDrift = null) {
     const progress = elapsed / duration;
     const y = progress * FALL_DISTANCE;
     drop.style.transform = `translate(${drift * progress}px, ${y}px)`;
+    
     if (y > fadeStart) {
       const t = Math.min((y - fadeStart) / (fadeEnd - fadeStart), 1);
       drop.style.opacity = (0.85 * (1 - t)).toFixed(2);
-      if (Math.random() < t * 0.4) drop.textContent = rainGlyphs[Math.floor(Math.random() * rainGlyphs.length)];
+      
+      if (Math.random() < t * 0.55) {
+        drop.textContent = rainGlyphs[Math.floor(Math.random() * rainGlyphs.length)];
+      }
     }
+
     if (progress < 1) requestAnimationFrame(animate); else drop.remove();
   }
   requestAnimationFrame(animate);
@@ -193,7 +195,6 @@ inputBox.addEventListener("keydown", e => {
     }
 
     const isPowerful = text.length > 30;
-    // Lowered likelihood for Powerful strikes (from 100% down to 65%)
     const flashChance = isPowerful ? 0.65 : 0.25;
 
     if (Math.random() < flashChance) {
