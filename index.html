@@ -44,7 +44,7 @@
 <body>
 
 <div id="rain"></div>
-<input id="input" type="text" placeholder="Offer yourself to the rain" maxlength="60"/>
+<input id="input" type="text" placeholder="Offer something to the rain" maxlength="200"/>
 
 <script>
 const rain = document.getElementById("rain");
@@ -157,7 +157,14 @@ inputBox.addEventListener("keydown", e => {
       const randomStartDelay = Math.random() * 1000;
 
       setTimeout(() => {
-        createDrop(letter, startX + (i * charSpacing), 0.9, charDrift);
+        createDrop(
+          letter,
+          startX + (i * charSpacing),
+          0.9,
+          charDrift,
+          0.25   // letters stay intact for first ~25% of fall
+        );
+
       }, randomStartDelay);
     });
 
