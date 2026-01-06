@@ -48,7 +48,7 @@
 
 <script>
 const rain = document.getElementById("rain");
-const VIEWPORT_HEIGHT = window.innerHeight;
+const VIEWPORT_HEIGHT = document.documentElement.clientHeight;
 const FALL_DISTANCE = VIEWPORT_HEIGHT * 1.1;
 
 const rainGlyphs = [".", "·", "+", "‖", "¦", "∫", "⁕", "⁖", "!", "░"];
@@ -153,7 +153,7 @@ inputBox.addEventListener("keydown", e => {
     letters.forEach((letter, i) => {
       if (letter === " ") return;
       const centerOffset = i - (letters.length - 1) / 2;
-      const charDrift = centerOffset * 15; 
+      const charDrift = centerOffset * 5; 
       const randomStartDelay = Math.random() * 1000;
 
       setTimeout(() => {
