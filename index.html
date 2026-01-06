@@ -11,51 +11,47 @@
     color: #6fa8dc;
     font-family: monospace;
     overflow: hidden;
-    /* Extra precaution to keep the background stable */
     height: 100vh;
     width: 100vw;
+    transition: background-color 0.2s ease-out;
   }
 
-  #rain {
-    position: fixed;
-    inset: 0;
-    pointer-events: none;
-  }
+  body.flash { background-color: #1a1c2c; transition: background-color 0.04s ease-in; }
+  body.flash-violet { background-color: #2c1a2c; transition: background-color 0.04s ease-in; }
+  body.super-flash { background-color: #252a45; transition: background-color 0.1s ease-in; }
 
-  .drop {
-    position: absolute;
-    white-space: nowrap;
-    opacity: 0.85;
+  body.flash .drop, body.flash-violet .drop, body.super-flash .drop {
+    color: #b4d5fe;
+    opacity: 1 !important;
+    text-shadow: 0 0 10px rgba(111, 168, 220, 0.9);
+    transition: all 0.04s ease-in;
   }
+  body.flash-violet .drop { color: #dcb4fe; }
+
+  #rain { position: fixed; inset: 0; pointer-events: none; }
+  .drop { position: absolute; white-space: nowrap; opacity: 0.85; transition: color 0.4s ease, text-shadow 0.4s ease; }
 
   #input {
-    position: fixed;
-    bottom: 1.5rem; /* Slightly more room for mobile thumbs */
-    left: 50%;
-    transform: translateX(-50%);
-    background: rgba(0,0,0,0.8);
-    border: 1px solid #333;
-    color: #aaa;
-    padding: 0.7rem;
-    width: 85%;
-    max-width: 400px;
-    font-family: monospace;
-    font-size: 16px;
-    outline: none;
-    -webkit-appearance: none; /* Mobile Safari fix */
+    position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%);
+    background: rgba(0,0,0,0.8); border: 1px solid #333; color: #aaa;
+    padding: 0.7rem; width: 85%; max-width: 400px; font-family: monospace;
+    font-size: 16px; outline: none; -webkit-appearance: none; z-index: 10;
   }
 </style>
 </head>
 <body>
 
 <div id="rain"></div>
-<input id="input" type="text" placeholder="Offer something to the rain" maxlength="200"/>
+<input id="input" type="text" placeholder="Offer something to the rain" maxlength="500" autofocus/>
 
 <script>
 const rain = document.getElementById("rain");
-// Track height dynamically for mobile rotations
+const body = document.body;
+const inputBox = document.getElementById("input");
+
 let VIEWPORT_HEIGHT = window.innerHeight;
 let FALL_DISTANCE = VIEWPORT_HEIGHT * 1.1;
+let rainIntensityMultiplier = 1;
 
 window.addEventListener('resize', () => {
   VIEWPORT_HEIGHT = window.innerHeight;
@@ -70,17 +66,70 @@ const poem = [
   "野徑雲俱黑，江船火獨明", "曉看紅溼處，花重錦官城",
 ];
 
+// --- Weighted Lightning Logic ---
+function triggerLightning(isPowerful = false) {
+  const isSuper = Math.random() < 0.03;
+  const isViolet = !isSuper && Math.random() < 0.15;
+  const flashClass = isSuper ? 'super-flash' : (isViolet ? 'flash-violet' : 'flash');
+
+  if (isSuper) {
+    body.classList.add(flashClass);
+    rainIntensityMultiplier = 2.8; // Monsoon surge
+    setTimeout(() => {
+      body.classList.remove(flashClass);
+      setTimeout(() => { rainIntensityMultiplier = 1; }, 3500);
+    }, 1000);
+    return;
+  }
+
+  let strikeCount = 1;
+  const roll = Math.random();
+
+  if (!isPowerful) {
+    // New Standard Probabilities: 1(55%), 2(25%), 3(15%), 4(5%)
+    if (roll > 0.95) strikeCount = 4;
+    else if (roll > 0.80) strikeCount = 3;
+    else if (roll > 0.55) strikeCount = 2;
+    else strikeCount = 1;
+  } else {
+    // Shifted weights for long text submissions
+    if (roll > 0.6) strikeCount = 4;
+    else if (roll > 0.3) strikeCount = 3;
+    else strikeCount = 2;
+  }
+
+  let currentStrike = 0;
+  function strike() {
+    body.classList.add(flashClass);
+    const flashDuration = Math.random() > 0.85 ? 280 : (Math.random() * 80 + 40);
+    setTimeout(() => {
+      body.classList.remove(flashClass);
+      currentStrike++;
+      if (currentStrike < strikeCount) {
+        setTimeout(strike, Math.random() * 180 + 40);
+      }
+    }, flashDuration);
+  }
+  strike();
+}
+
+function scheduleAmbientLightning() {
+  setTimeout(() => {
+    triggerLightning(false);
+    scheduleAmbientLightning();
+  }, Math.random() * 10000 + 5000);
+}
+scheduleAmbientLightning();
+
 function createDrop(char, xBase, speed = 1, manualDrift = null) {
   const drop = document.createElement("div");
   drop.className = "drop";
   drop.textContent = char;
-
   const drift = manualDrift !== null ? manualDrift : (Math.random() * 20 - 10);
-  
   drop.style.left = xBase + "px";
   drop.style.top = "-20px";
-
-  const duration = (5 + Math.random() * 6) / speed;
+  
+  const duration = (5 + Math.random() * 6) / (speed * rainIntensityMultiplier);
   rain.appendChild(drop);
 
   const fadeStart = VIEWPORT_HEIGHT * 0.65;
@@ -91,53 +140,40 @@ function createDrop(char, xBase, speed = 1, manualDrift = null) {
     const elapsed = (time - startTime) / 1000;
     const progress = elapsed / duration;
     const y = progress * FALL_DISTANCE;
-
     drop.style.transform = `translate(${drift * progress}px, ${y}px)`;
-
     if (y > fadeStart) {
       const t = Math.min((y - fadeStart) / (fadeEnd - fadeStart), 1);
       drop.style.opacity = (0.85 * (1 - t)).toFixed(2);
-
-      if (Math.random() < t * 0.4) {
-        drop.textContent = rainGlyphs[Math.floor(Math.random() * rainGlyphs.length)];
-      }
+      if (Math.random() < t * 0.4) drop.textContent = rainGlyphs[Math.floor(Math.random() * rainGlyphs.length)];
     }
-
-    if (progress < 1) {
-      requestAnimationFrame(animate);
-    } else {
-      drop.remove();
-    }
+    if (progress < 1) requestAnimationFrame(animate); else drop.remove();
   }
-
   requestAnimationFrame(animate);
 }
 
-function randomChar() {
-  return rainGlyphs[Math.floor(Math.random() * rainGlyphs.length)];
+function randomChar() { return rainGlyphs[Math.floor(Math.random() * rainGlyphs.length)]; }
+
+function spawnRain(baseRate, speed, drift) {
+  createDrop(randomChar(), Math.random() * window.innerWidth, speed, drift);
+  setTimeout(() => spawnRain(baseRate, speed, drift), baseRate / rainIntensityMultiplier);
 }
+spawnRain(260, 0.6, null);
+spawnRain(120, 1.2, 0);
+spawnRain(300, 1.8, 0);
 
-// --- Background layered rain ---
-setInterval(() => createDrop(randomChar(), Math.random() * window.innerWidth, 0.6), 260);
-setInterval(() => createDrop(randomChar(), Math.random() * window.innerWidth, 1.2, 0), 120);
-setInterval(() => createDrop(randomChar(), Math.random() * window.innerWidth, 1.8, 0), 300);
-
-// --- Poem lines ---
 setInterval(() => {
   const line = poem[Math.floor(Math.random() * poem.length)];
   const charSpacing = 18; 
   const totalWidth = line.length * charSpacing;
-  
   const margin = totalWidth / 2 + 20;
   const centerX = margin + Math.random() * (window.innerWidth - margin * 2);
   const startX = centerX - totalWidth / 2;
-
   const isHeavyRain = Math.random() < 0.25;
+  if (isHeavyRain && Math.random() > 0.4) setTimeout(() => triggerLightning(false), 400);
 
   line.split("").forEach((letter, i) => {
     const centerOffset = i - (line.length - 1) / 2;
     const charDrift = isHeavyRain ? 0 : centerOffset * 12; 
-
     const randomStartDelay = Math.random() * 800;
     setTimeout(() => {
       createDrop(letter, startX + (i * charSpacing), 0.8 + Math.random() * 0.3, charDrift);
@@ -145,20 +181,23 @@ setInterval(() => {
   });
 }, 5000);
 
-// --- User input ---
-const inputBox = document.getElementById("input");
 inputBox.addEventListener("keydown", e => {
   if (e.key === "Enter" && inputBox.value.trim() !== "") {
     e.preventDefault();
-    
-    // Auto-hide keyboard for better visibility
-    inputBox.blur();
-
     const text = inputBox.value;
+
+    const isMobile = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+    
+    if (isMobile) {
+      inputBox.blur(); 
+    }
+
+    const isPowerful = text.length > 30;
+    if (Math.random() < (isPowerful ? 1.0 : 0.3)) setTimeout(() => triggerLightning(isPowerful), 600);
+
     const letters = text.split("");
     const charSpacing = 16;
     const totalWidth = letters.length * charSpacing;
-    
     const inputMargin = totalWidth / 2 + 30;
     const inputCenterX = inputMargin + Math.random() * (window.innerWidth - inputMargin * 2);
     const startX = inputCenterX - totalWidth / 2;
@@ -168,18 +207,14 @@ inputBox.addEventListener("keydown", e => {
       const centerOffset = i - (letters.length - 1) / 2;
       const charDrift = centerOffset * 5; 
       const randomStartDelay = Math.random() * 1000;
-
       setTimeout(() => {
-        createDrop(
-          letter,
-          startX + (i * charSpacing),
-          0.9,
-          charDrift
-        );
+        createDrop(letter, startX + (i * charSpacing), 0.9, charDrift);
       }, randomStartDelay);
     });
-
+    
     inputBox.value = "";
+    // Keep desktop users focused
+    if (!isMobile) inputBox.focus();
   }
 });
 </script>
