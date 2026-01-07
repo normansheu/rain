@@ -42,7 +42,7 @@
 <body>
 
 <div id="rain"></div>
-<input id="input" type="text" placeholder="Offer something to the rain" maxlength="200" autofocus/>
+<input id="input" type="text" placeholder="Type something to offer to the rain" maxlength="500" autofocus/>
 
 <script>
 const rain = document.getElementById("rain");
@@ -67,7 +67,7 @@ const poem = [
 ];
 
 function triggerLightning(isPowerful = false) {
-  const isSuper = Math.random() < 0.08;
+  const isSuper = Math.random() < 0.09;
   const isViolet = !isSuper && Math.random() < 0.15;
   const flashClass = isSuper ? 'super-flash' : (isViolet ? 'flash-violet' : 'flash');
 
